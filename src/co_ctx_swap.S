@@ -44,7 +44,7 @@ co_ctx_swap:
     movl 12(%eax), %edx     # ctx2.regs[3] to %edx
     movl 16(%eax), %edi     # ctx2.regs[4] to %edi
     movl 20(%eax), %esi     # ctx2.regs[5] to %esi
-    movl 20(%eax), %ebp     # ctx2.regs[6] to %ebp
+    movl 24(%eax), %ebp     # ctx2.regs[6] to %ebp
     movl 28(%eax), %esp     # ctx2.regs[7] to %esp  设置ret地址
 
     ret # 跳转到esp指向的地址，esp + 4

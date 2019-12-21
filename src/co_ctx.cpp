@@ -80,9 +80,9 @@ int co_ctx_init(co_ctx_t *ctx)
 
 int co_ctx_make(co_ctx_t *ctx, co_ctx_pfn_t pfn, const void *s, const void *s1)
 {
-    // 为 co_ctx_param 分配房间, 栈向低地址扩展
+    // 把堆上分配的数组末尾当做栈顶， 从而由高地址向低地址扩展
     char *sp = ctx->ss_sp + ctx->ss_size - sizeof(co_ctx_param_t);
-    sp = (char*)((unsigned long)sp & -16L);   //  sp&(...ff ff ff f0) 末尾4个bit置0
+    sp = (char*)((unsigned long)sp & -16L);   //  sp&(...ff ff ff7aca010f f0) 末尾4个bit置0
 
     co_ctx_param_t *param = (co_ctx_param_t*)sp;
     void **ret_addr = (void**)(sp - sizeof(void*) * 2);
@@ -92,6 +92,18 @@ int co_ctx_make(co_ctx_t *ctx, co_ctx_pfn_t pfn, const void *s, const void *s1)
 
     memset(ctx->regs, 0, sizeof(ctx->regs));
     ctx->regs[kESP] = (char*)(sp) - sizeof(void*) * 2;
+
+    // 为什么 是 - sizeof(void*) * 2
+    // ctx 栈的情况
+    // arg2
+    // arg1
+    // (NULL)
+    // ret addr(pfn)  <- %esp (co_ctx_swap把%esp指向这里)然后 co_ctx_swap 中会发生一次 ret esp会+4
+    // 就变成了正常的调用了 pfn, 注意pfn不能返回，因为 %esp 指向的内存为NULL
+    // arg2
+    // arg1
+    // (NULL)         <- new %esp
+    // ---------------- pfn run ---------
 
     return 0;
 }
@@ -107,6 +119,7 @@ int co_ctx_init(co_ctx_t *ctx)
 // 64位下，函数调用，寄存器约定这些与32位下有很大不同
 int co_ctx_make(co_ctx_t *ctx, co_ctx_pfn_t pfn, const void *s, const void *s1)
 {
+    // 把堆上分配的数组末尾当做栈顶， 从而由高地址向低地址扩展
     char *sp = ctx->ss_sp + ctx->ss_size - sizeof(void*);
     sp = (char*)((unsigned long)sp & -16LL);
 
